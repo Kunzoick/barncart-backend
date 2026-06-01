@@ -29,7 +29,7 @@ spring:
 
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 management:
   endpoints:
@@ -72,8 +72,8 @@ reservation:
 logging:
   level:
     root: INFO
-    com.zoick.farmmarket: DEBUG
-    org.springframework.web: DEBUG
+    com.zoick.farmmarket: INFO
+    org.springframework.web: WARN
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
   pattern:
