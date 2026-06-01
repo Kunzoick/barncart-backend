@@ -1,0 +1,25 @@
+# Environment secrets — never commit
+.env
+*.env
+
+# Maven build output
+target/
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Spring Boot local config overrides
+application-local.yaml
+application-local.properties

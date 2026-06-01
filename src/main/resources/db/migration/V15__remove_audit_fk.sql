@@ -1,0 +1,1 @@
+ALTER TABLE audit_log DROP FOREIGN KEY audit_log_ibfk_1;
