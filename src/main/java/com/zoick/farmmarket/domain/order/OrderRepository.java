@@ -44,7 +44,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
         WHERE status IN ('PAID', 'FULFILLED', 'DELIVERED')
         AND created_at >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
         GROUP BY YEAR(created_at), WEEK(created_at, 3)
-        ORDER BY YEAR(created_at), WEEK(created_at, 3)
+        ORDER BY YEAR(created_at), WEEK(created_at, 3), CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0'))
         """, nativeQuery = true)
     List<Object[]> findWeeklyRevenue();
 }
