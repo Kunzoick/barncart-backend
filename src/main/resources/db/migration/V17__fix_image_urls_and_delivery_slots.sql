@@ -7,7 +7,7 @@ UPDATE produce SET image_url = 'https://plus.unsplash.com/premium_photo-17256691
 UPDATE produce SET image_url = 'https://images.unsplash.com/photo-1636210589096-a53d5dacd702?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' WHERE id = 'b4000004-0000-0000-0000-000000000003';
 
 -- Seed future delivery slots (June 11 2026 onwards only)
-INSERT IGNORE INTO delivery_slot (id, date, time_of_day, capacity, bookings_count, created_at, updated_at) VALUES
+INSERT IGNORE INTO delivery_slot (id, slot_date, slot_type, capacity, booked_count, created_at, updated_at) VALUES
 ('25ee0121-5d9c-11f1-af03-14d42417a202', '2026-06-11', 'MORNING', 10, 0, '2026-06-01 05:27:39', '2026-06-01 05:27:39'),
 ('25ee52ad-5d9c-11f1-af03-14d42417a202', '2026-06-21', 'MORNING', 10, 0, '2026-06-01 05:27:39', '2026-06-01 05:27:39'),
 ('25ee54cf-5d9c-11f1-af03-14d42417a202', '2026-07-01', 'MORNING', 10, 0, '2026-06-01 05:27:39', '2026-06-01 05:27:39'),
