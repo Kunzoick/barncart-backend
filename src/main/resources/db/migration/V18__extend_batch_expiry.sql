@@ -1,0 +1,19 @@
+-- Extend expiring batch dates by 3 months (all batches expiring before 2026-07-01)
+UPDATE harvest_batch SET expiry_date = '2026-09-05' WHERE id = 'c3000003-0000-0000-0000-000000000001';
+UPDATE harvest_batch SET expiry_date = '2026-09-05' WHERE id = 'c5000005-0000-0000-0000-000000000004';
+UPDATE harvest_batch SET expiry_date = '2026-09-05' WHERE id = 'c5000005-0000-0000-0000-000000000002';
+UPDATE harvest_batch SET expiry_date = '2026-09-05' WHERE id = 'c5000005-0000-0000-0000-000000000001';
+UPDATE harvest_batch SET expiry_date = '2026-09-05' WHERE id = 'c3000003-0000-0000-0000-000000000002';
+UPDATE harvest_batch SET expiry_date = '2026-09-05' WHERE id = 'c2000002-0000-0000-0000-000000000004';
+UPDATE harvest_batch SET expiry_date = '2026-09-07' WHERE id = 'c2000002-0000-0000-0000-000000000001';
+UPDATE harvest_batch SET expiry_date = '2026-09-07' WHERE id = 'c5000005-0000-0000-0000-000000000003';
+UPDATE harvest_batch SET expiry_date = '2026-09-08' WHERE id = 'c3000003-0000-0000-0000-000000000003';
+UPDATE harvest_batch SET expiry_date = '2026-09-10' WHERE id = 'c2000002-0000-0000-0000-000000000002';
+UPDATE harvest_batch SET expiry_date = '2026-09-14' WHERE id = 'c1000001-0000-0000-0000-000000000004';
+UPDATE harvest_batch SET expiry_date = '2026-09-15' WHERE id = 'c2000002-0000-0000-0000-000000000005';
+UPDATE harvest_batch SET expiry_date = '2026-09-15' WHERE id = 'c1000001-0000-0000-0000-000000000003';
+UPDATE harvest_batch SET expiry_date = '2026-09-18' WHERE id = 'c1000001-0000-0000-0000-000000000002';
+UPDATE harvest_batch SET expiry_date = '2026-09-20' WHERE id = 'c2000002-0000-0000-0000-000000000003';
+UPDATE harvest_batch SET expiry_date = '2026-09-20' WHERE id = 'c1000001-0000-0000-0000-000000000001';
+UPDATE harvest_batch SET expiry_date = '2026-09-21' WHERE id = 'c1000001-0000-0000-0000-000000000005';
+UPDATE harvest_batch SET expiry_date = '2026-09-25' WHERE id = 'c1000001-0000-0000-0000-000000000006';
