@@ -64,7 +64,15 @@ public class SecurityConfig {
                         //hsts- force https, browsers remember for max-age duration(uses 1 day cos of development) will increase to 31536000(1yr) for production
                                 .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(false).maxAgeInSeconds(86400))
                         //CSP-> controls what the browser is allowed to load, default-src only resources from your own origin
-                                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; " +
+                                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                        /* for local production ->
+                                        "default-src 'self'; "+
+                                        "connect-src 'self' ws://localhost:5173 http://localhost:5173 ws://localhost:8080
+                                        http://localhost:8080; " +
+                                         "frame-ancestors 'none'; " +
+                                          "form-action 'self'"
+                                        * */
+                                        "default-src 'self'; " +
                                         "connect-src 'self' https://barncart-backend.onrender.com wss://barncart-backend.onrender.com https://js.stripe.com; " +
                                         "script-src 'self' https://js.stripe.com; " +
                                         "frame-src https://js.stripe.com; " +
