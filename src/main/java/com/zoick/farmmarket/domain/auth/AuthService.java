@@ -49,7 +49,7 @@ public class AuthService {
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
         user.setRole(Role.CUSTOMER);
-        user.setActive(false);
+        user.setActive(true);
         userRepository.save(user);
         //generate and save verification code & if transaction rolls back, code is never saved and email never sends
         String rawCode = generateSixDigitCode();
