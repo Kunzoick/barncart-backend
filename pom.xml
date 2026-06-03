@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.Zoick</groupId>
-	<artifactId>Farmmarket</artifactId>
+	<artifactId>barncart</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>
