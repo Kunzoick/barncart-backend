@@ -18,7 +18,8 @@ public class CreateProduceRequest {
     @Size(max = 150, message = "Produce name must not exceed 150 characters")
     private String name;
     private String description;
-    @NotBlank(message = "Unit is required")
+    //@NotBlank only works on string
+    @NotNull(message = "Unit is required")
    /* @Pattern(
             regexp = "(?i)KG|G|LB|PIECE",
             message = "Unit must be one of: KG, G, LB, PIECE"
