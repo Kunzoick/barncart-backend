@@ -38,13 +38,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
     List<Object[]> countGroupByStatus();
     @Query(value = """
-        SELECT CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0')) as week_label,
-               SUM(total_amount) as revenue
-        FROM orders
-        WHERE status IN ('PAID', 'FULFILLED', 'DELIVERED')
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
-        GROUP BY YEAR(created_at), WEEK(created_at, 3)
-        ORDER BY YEAR(created_at), WEEK(created_at, 3), CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0'))
-        """, nativeQuery = true)
+         SELECT CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0')) as week_label,
+                   SUM(total_amount) as revenue
+            FROM orders
+            WHERE status IN ('PAID', 'FULFILLED', 'DELIVERED')
+            AND created_at >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
+            GROUP BY YEAR(created_at), WEEK(created_at, 3), CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0'))
+            ORDER BY YEAR(created_at), WEEK(created_at, 3)
+            """, nativeQuery = true)
     List<Object[]> findWeeklyRevenue();
 }
