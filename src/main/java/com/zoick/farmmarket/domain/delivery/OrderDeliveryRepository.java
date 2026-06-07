@@ -17,14 +17,14 @@ public interface OrderDeliveryRepository extends JpaRepository<OrderDelivery, UU
     Optional<OrderDelivery> findByOrderId(UUID orderId);
     //finds deliveries fulfilled more than 24 hours ago and not yet confirmed by customer
     @Query("""
-        SELECT od FROM OrderDelivery od
-        JOIN FETCH od.order o
-        WHERE od.fulfilledAt IS NOT NULL
-        AND od.fulfilledAt < :cutoff
-        AND od.customerConfirmedAt IS NULL
-        AND od.autoConfirmed = false
-        AND o.status = 'FULFILLED'
-        """)
+    SELECT od.id FROM OrderDelivery od
+    JOIN od.order o
+    WHERE od.fulfilledAt IS NOT NULL
+    AND od.fulfilledAt < :cutoff
+    AND od.customerConfirmedAt IS NULL
+    AND od.autoConfirmed = false
+    AND o.status = 'FULFILLED'
+    """)
     List<UUID> findPendingConfirmationBefore(@Param("cutoff") LocalDateTime cutoff);
     @Query("""
     SELECT od FROM OrderDelivery od

@@ -20,7 +20,7 @@ public class DeliveryConfirmationJob {
 
     @Scheduled(fixedDelay = 1800000)
     public void autoConfirmDeliveries() {
-        LocalDateTime cutoff = LocalDateTime.now().minusHours(24);
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(48);
         //fetch ids only -> processor loads fresh data inside its own transaction
         List<UUID> deliveryIds = orderDeliveryRepository.findPendingConfirmationBefore(cutoff);
         if (deliveryIds.isEmpty()) return;
