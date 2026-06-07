@@ -47,4 +47,5 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             ORDER BY YEAR(created_at), WEEK(created_at, 3)
             """, nativeQuery = true)
     List<Object[]> findWeeklyRevenue();
+
 }

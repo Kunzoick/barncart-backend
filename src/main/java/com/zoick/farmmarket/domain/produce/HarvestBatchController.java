@@ -39,4 +39,9 @@ public class HarvestBatchController {
                                                             @PathVariable UUID id) {
         return ResponseEntity.ok(harvestBatchService.cancelBatch(id, principal.getUserId()));
     }
+    @PatchMapping("/{id}/restock")
+    public ResponseEntity<HarvestBatchResponse> restockBatch(@AuthenticationPrincipal FarmUserDetails principal,
+                                                             @PathVariable UUID id, @RequestBody RestockRequest request){
+        return ResponseEntity.ok(harvestBatchService.restockBatch(id, request.quantity(), principal.getUserId()));
+    }
 }

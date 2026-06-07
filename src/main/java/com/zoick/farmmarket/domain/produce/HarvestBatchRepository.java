@@ -34,4 +34,15 @@ public interface HarvestBatchRepository extends JpaRepository<HarvestBatch, UUID
         """)
     int returnStock(@Param("batchId") UUID batchId,
                     @Param("quantity") BigDecimal quantity);
+    // atomic for restock
+    @Modifying(clearAutomatically = true)
+    @Query("""
+    UPDATE HarvestBatch h
+    SET h.quantityAvailable = h.quantityAvailable + :quantity,
+        h.quantityOriginal = h.quantityOriginal + :quantity
+    WHERE h.id = :batchId
+    AND h.status != 'CANCELLED'
+    """)
+    int addStock(@Param("batchId") UUID batchId,
+                 @Param("quantity") BigDecimal quantity);
 }

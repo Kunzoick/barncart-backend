@@ -104,4 +104,31 @@ public class HarvestBatchService {
         eventPublisher.publishEvent(new InventoryUpdateEvent(batchId));
         return HarvestBatchResponse.from(batch);
     }
+    @Transactional
+    public HarvestBatchResponse restockBatch(UUID batchId, BigDecimal quantity, UUID adminId){
+        if(quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0){
+            throw new IllegalArgumentException("Restock quantity must be greater than Zero");
+        }
+        HarvestBatch batch= getRawBatchById(batchId);
+        if(batch.getStatus() == BatchStatus.CANCELLED){
+            throw new IllegalArgumentException("Cancelled batches cannot be restocked");
+        }
+        BigDecimal previousAvailable = batch.getQuantityAvailable();
+        BigDecimal previousOriginal= batch.getQuantityOriginal();
+        int rows= harvestBatchRepository.addStock(batchId, quantity);
+        if(rows == 0){
+            throw new IllegalStateException("Restock failed - batch may have been cancelled");
+        }
+        if(batch.getStatus() == BatchStatus.DEPLETED){
+            batch.setStatus(BatchStatus.ACTIVE);
+            harvestBatchRepository.save(batch);
+        }
+        HarvestBatch updated= getRawBatchById(batchId);
+        auditService.log("HarvestBatch", batchId, "BATCH_RESTORED", adminId,
+                Map.of("quantityAvailable", previousAvailable, "quantityOriginal", previousOriginal),
+                Map.of("quantityAdded", quantity, "quantityAvailable", updated.getQuantityAvailable(),
+                        "quantityOriginal", updated.getQuantityOriginal()));
+        eventPublisher.publishEvent(new InventoryUpdateEvent(batchId));
+        return HarvestBatchResponse.from(updated);
+    }
 }
