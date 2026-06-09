@@ -123,6 +123,7 @@ public class OrderService {
                 orderItem.setPriceAtPurchase(price);
                 orderItem.setPricingType(pricingType);
                 orderItemRepository.save(orderItem);
+                log.info("Saved order item for: {}", batch.getProduce().getName());
             } catch (Exception e) {
                 log.error("FAILED on cart item batch {}: {}",
                         cartItem.getListing().getBatch().getId(), e.getMessage(), e);
