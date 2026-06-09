@@ -19,6 +19,7 @@ import com.zoick.farmmarket.infrastructure.websocket.InventoryWebSocketService;
 import com.zoick.farmmarket.infrastructure.websocket.OrderStatusChangedEvent;
 import com.zoick.farmmarket.infrastructure.websocket.OrderStatusWebSocketService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -89,37 +91,43 @@ public class OrderService {
         order.setRefundStatus(RefundStatus.NONE);
         orderRepository.saveAndFlush(order);
 
-        for(CartItem cartItem : cartItems){
-            var batch= cartItem.getListing().getBatch();
-            BigDecimal quantity= cartItem.getQuantity();
-            BigDecimal quantityBefore= batch.getQuantityAvailable();
-            int rowsAffected= harvestBatchRepository.deductStock(batch.getId(), quantity);
-            if(rowsAffected == 0){
-                throw new IllegalStateException("Insufficient stock for: "+ batch.getProduce().getName());
-            }
-            //cpmpute post-deduction value explicitly-> cache is stale after atomic Update
-            auditService.log("HarvestBatch", batch.getId(), "STOCK_DEDUCTED", userId,
-                    Map.of("quantityAvailable", quantityBefore, "quantityDeducted", quantity),
-                    Map.of("quantityAvailable", quantityBefore.subtract(quantity)));
-            Reservation reservation = new Reservation();
-            reservation.setOrder(order);
-            reservation.setUser(user);
-            reservation.setBatch(batch);
-            reservation.setQuantity(quantity);
-            reservation.setStatus(ReservationStatus.ACTIVE);
-            reservation.setExpiresAt(LocalDateTime.now().plusMinutes(reservationTimeoutMinutes));
-            reservationRepository.save(reservation);
+        for(CartItem cartItem : cartItems) {
+            try {
+                var batch = cartItem.getListing().getBatch();
+                BigDecimal quantity = cartItem.getQuantity();
+                BigDecimal quantityBefore = batch.getQuantityAvailable();
+                int rowsAffected = harvestBatchRepository.deductStock(batch.getId(), quantity);
+                if (rowsAffected == 0) {
+                    throw new IllegalStateException("Insufficient stock for: " + batch.getProduce().getName());
+                }
+                //cpmpute post-deduction value explicitly-> cache is stale after atomic Update
+                auditService.log("HarvestBatch", batch.getId(), "STOCK_DEDUCTED", userId,
+                        Map.of("quantityAvailable", quantityBefore, "quantityDeducted", quantity),
+                        Map.of("quantityAvailable", quantityBefore.subtract(quantity)));
+                Reservation reservation = new Reservation();
+                reservation.setOrder(order);
+                reservation.setUser(user);
+                reservation.setBatch(batch);
+                reservation.setQuantity(quantity);
+                reservation.setStatus(ReservationStatus.ACTIVE);
+                reservation.setExpiresAt(LocalDateTime.now().plusMinutes(reservationTimeoutMinutes));
+                reservationRepository.save(reservation);
 
-            BigDecimal price= pricingType == PricingType.BULK ? cartItem.getListing().getBulkPrice() : cartItem
-                    .getListing().getRetailPrice();
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setListing(cartItem.getListing());
-            orderItem.setBatch(batch);
-            orderItem.setQuantity(quantity);
-            orderItem.setPriceAtPurchase(price);
-            orderItem.setPricingType(pricingType);
-            orderItemRepository.save(orderItem);
+                BigDecimal price = pricingType == PricingType.BULK ? cartItem.getListing().getBulkPrice() : cartItem
+                        .getListing().getRetailPrice();
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrder(order);
+                orderItem.setListing(cartItem.getListing());
+                orderItem.setBatch(batch);
+                orderItem.setQuantity(quantity);
+                orderItem.setPriceAtPurchase(price);
+                orderItem.setPricingType(pricingType);
+                orderItemRepository.save(orderItem);
+            } catch (Exception e) {
+                log.error("FAILED on cart item batch {}: {}",
+                        cartItem.getListing().getBatch().getId(), e.getMessage(), e);
+                throw e;
+            }
         }
         OrderDelivery delivery = new OrderDelivery();
         delivery.setOrder(order);
