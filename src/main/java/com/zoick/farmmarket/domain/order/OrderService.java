@@ -100,6 +100,7 @@ public class OrderService {
         orderRepository.saveAndFlush(order);
 
         for(CartItemSnapshot snapshot : snapshots) {
+            try {
                 int rowsAffected = harvestBatchRepository.deductStock(snapshot.batchId(), snapshot.quantity());
                 if (rowsAffected == 0) {
                     throw new IllegalStateException("Insufficient stock for: " + snapshot.produceName());
@@ -117,20 +118,23 @@ public class OrderService {
                 reservation.setExpiresAt(LocalDateTime.now().plusMinutes(reservationTimeoutMinutes));
                 reservationRepository.save(reservation);
 
-            BigDecimal price = pricingType == PricingType.BULK
-                    ? snapshot.bulkPrice()
-                    : snapshot.retailPrice();
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setListing(listingRepository.getReferenceById(snapshot.listingId()));
-            orderItem.setBatch(harvestBatchRepository.getReferenceById(snapshot.batchId()));
-            orderItem.setQuantity(snapshot.quantity());
-            orderItem.setPriceAtPurchase(price);
-            orderItem.setPricingType(pricingType);
-            orderItemRepository.save(orderItem);
+                BigDecimal price = pricingType == PricingType.BULK
+                        ? snapshot.bulkPrice()
+                        : snapshot.retailPrice();
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrder(order);
+                orderItem.setListing(listingRepository.getReferenceById(snapshot.listingId()));
+                orderItem.setBatch(harvestBatchRepository.getReferenceById(snapshot.batchId()));
+                orderItem.setQuantity(snapshot.quantity());
+                orderItem.setPriceAtPurchase(price);
+                orderItem.setPricingType(pricingType);
+                orderItemRepository.save(orderItem);
 
-            log.info("Saved order item for: {}", snapshot.produceName());
-
+                log.info("Saved order item for: {}", snapshot.produceName());
+            } catch (Exception e) {
+                log.error("FAILED on snapshpt {}: {}", snapshot.produceName(), e.getMessage(), e);
+                throw e;
+            }
         }
         OrderDelivery delivery = new OrderDelivery();
         delivery.setOrder(order);
