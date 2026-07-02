@@ -80,6 +80,14 @@ public class OrderService {
         }
         PricingType pricingType= determinePricingType(cartItems);
         BigDecimal totalAmount= computeTotal(cartItems, pricingType);
+        //snapshot all cart item data before @Modifying clears the hibernate session
+        record CartItemSnapshot(UUID batchId, UUID listingId, BigDecimal quantity, BigDecimal bulkPrice,
+                                BigDecimal retailPrice, BigDecimal quantityAvailable, String produceName){}
+        List<CartItemSnapshot> snapshots= cartItems.stream().map(ci -> new CartItemSnapshot(
+                ci.getListing().getBatch().getId(), ci.getListing().getId(),
+                ci.getQuantity(), ci.getListing().getBulkPrice(), ci.getListing().getRetailPrice(),
+                ci.getListing().getBatch().getQuantityAvailable(), ci.getListing().getBatch().getProduce().getName()
+        )).toList();
         User user= userRepository.getReferenceById(userId);
         Order order = new Order();
         order.setUser(user);
@@ -91,44 +99,38 @@ public class OrderService {
         order.setRefundStatus(RefundStatus.NONE);
         orderRepository.saveAndFlush(order);
 
-        for(CartItem cartItem : cartItems) {
-            try {
-                var batch = cartItem.getListing().getBatch();
-                BigDecimal quantity = cartItem.getQuantity();
-                BigDecimal quantityBefore = batch.getQuantityAvailable();
-                int rowsAffected = harvestBatchRepository.deductStock(batch.getId(), quantity);
+        for(CartItemSnapshot snapshot : snapshots) {
+                int rowsAffected = harvestBatchRepository.deductStock(snapshot.batchId(), snapshot.quantity());
                 if (rowsAffected == 0) {
-                    throw new IllegalStateException("Insufficient stock for: " + batch.getProduce().getName());
+                    throw new IllegalStateException("Insufficient stock for: " + snapshot.produceName());
                 }
                 //cpmpute post-deduction value explicitly-> cache is stale after atomic Update
-                auditService.log("HarvestBatch", batch.getId(), "STOCK_DEDUCTED", userId,
-                        Map.of("quantityAvailable", quantityBefore, "quantityDeducted", quantity),
-                        Map.of("quantityAvailable", quantityBefore.subtract(quantity)));
+                auditService.log("HarvestBatch", snapshot.batchId(), "STOCK_DEDUCTED", userId,
+                        Map.of("quantityAvailable", snapshot.quantityAvailable(), "quantityDeducted", snapshot.quantity()),
+                        Map.of("quantityAvailable", snapshot.quantityAvailable().subtract(snapshot.quantity())));
                 Reservation reservation = new Reservation();
                 reservation.setOrder(order);
                 reservation.setUser(user);
-                reservation.setBatch(batch);
-                reservation.setQuantity(quantity);
+                reservation.setBatch(harvestBatchRepository.getReferenceById(snapshot.batchId()));
+                reservation.setQuantity(snapshot.quantity());
                 reservation.setStatus(ReservationStatus.ACTIVE);
                 reservation.setExpiresAt(LocalDateTime.now().plusMinutes(reservationTimeoutMinutes));
                 reservationRepository.save(reservation);
 
-                BigDecimal price = pricingType == PricingType.BULK ? cartItem.getListing().getBulkPrice() : cartItem
-                        .getListing().getRetailPrice();
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(order);
-                orderItem.setListing(cartItem.getListing());
-                orderItem.setBatch(batch);
-                orderItem.setQuantity(quantity);
-                orderItem.setPriceAtPurchase(price);
-                orderItem.setPricingType(pricingType);
-                orderItemRepository.save(orderItem);
-                log.info("Saved order item for: {}", batch.getProduce().getName());
-            } catch (Exception e) {
-                log.error("FAILED on cart item batch {}: {}",
-                        cartItem.getListing().getBatch().getId(), e.getMessage(), e);
-                throw e;
-            }
+            BigDecimal price = pricingType == PricingType.BULK
+                    ? snapshot.bulkPrice()
+                    : snapshot.retailPrice();
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setListing(listingRepository.getReferenceById(snapshot.listingId()));
+            orderItem.setBatch(harvestBatchRepository.getReferenceById(snapshot.batchId()));
+            orderItem.setQuantity(snapshot.quantity());
+            orderItem.setPriceAtPurchase(price);
+            orderItem.setPricingType(pricingType);
+            orderItemRepository.save(orderItem);
+
+            log.info("Saved order item for: {}", snapshot.produceName());
+
         }
         OrderDelivery delivery = new OrderDelivery();
         delivery.setOrder(order);
@@ -151,9 +153,8 @@ public class OrderService {
                 Map.of("status", OrderStatus.RESERVED.name()));
 
         //broadcast inventory update
-        for (CartItem cartItem : cartItems) {
-            eventPublisher.publishEvent(new InventoryUpdateEvent(cartItem.getListing().getBatch()
-                    .getId()));
+        for(CartItemSnapshot snapshot : snapshots){
+            eventPublisher.publishEvent(new InventoryUpdateEvent(snapshot.batchId()));
         }
         return new CheckoutInitResult(managedOrder, false);
     }
