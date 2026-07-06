@@ -128,7 +128,7 @@ public class OrderService {
                 orderItem.setQuantity(snapshot.quantity());
                 orderItem.setPriceAtPurchase(price);
                 orderItem.setPricingType(pricingType);
-                orderItemRepository.save(orderItem);
+                orderItemRepository.saveAndFlush(orderItem);
 
                 log.info("Saved order item for: {}", snapshot.produceName());
             } catch (Exception e) {
