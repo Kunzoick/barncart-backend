@@ -75,7 +75,7 @@ public class WebhookService {
                 new IllegalStateException("User not found for order: "+ order.getId()));
         String previousStatus= order.getStatus().name();
         //confirm reservation
-        reservationRepository.findByOrderId(order.getId()).ifPresent(reservation -> {
+        reservationRepository.findAllByOrderId(order.getId()).forEach(reservation -> {
             reservation.setStatus(ReservationStatus.CONFIRMED);
             reservationRepository.save(reservation);
         });
@@ -117,7 +117,7 @@ public class WebhookService {
             return;
         }
         String previousStatus= order.getStatus().name();
-        reservationRepository.findByOrderId(order.getId()).ifPresent(reservation -> {
+        reservationRepository.findAllByOrderId(order.getId()).forEach(reservation -> {
             harvestBatchRepository.returnStock(reservation.getBatch().getId(), reservation.getQuantity());
             reservation.setStatus(ReservationStatus.CANCELLED);
             reservationRepository.save(reservation);

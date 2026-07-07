@@ -43,4 +43,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     //bulk fetch
     @Query("SELECT r FROM Reservation r JOIN FETCH r.order o WHERE o.id IN :orderIds")
     List<Reservation> findAllByOrderIdIn(@Param("orderIds") List<UUID> orderIds);
+    List<Reservation> findAllByOrderId(UUID orderId);
 }

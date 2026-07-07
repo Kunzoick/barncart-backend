@@ -168,7 +168,7 @@ public class OrderService {
      */
     @Transactional
     public void expireImmediately(UUID orderId){
-        reservationRepository.findByOrderId(orderId).ifPresent(reservation -> {
+        reservationRepository.findAllByOrderId(orderId).forEach(reservation -> {
             if(reservation.getStatus() == ReservationStatus.ACTIVE){
                 harvestBatchRepository.returnStock(reservation.getBatch().getId(), reservation.getQuantity());
                 reservation.setStatus(ReservationStatus.EXPIRED);
@@ -216,7 +216,7 @@ public class OrderService {
         }
         List<OrderItemResponse> items= orderItemRepository.findAllByOrderIdWithDetails(orderId).stream().map(OrderItemResponse::from)
                 .collect(Collectors.toList());
-        LocalDateTime expiresAt= reservationRepository.findByOrderId(order.getId()).map(Reservation::getExpiresAt)
+        LocalDateTime expiresAt= reservationRepository.findAllByOrderId(order.getId()).stream().map(Reservation::getExpiresAt).findFirst()
                 .orElse(null);
         String disputeReason= orderDeliveryRepository.findByOrderId(orderId).map(d -> d.getDisputeReason())
                 .orElse(null);
@@ -232,6 +232,7 @@ public class OrderService {
         if(order.getStatus() != OrderStatus.RESERVED){
             throw new IllegalStateException("Order cannot be cancelled in status: "+ order.getStatus());
         }
+        /*
         Reservation reservation= reservationRepository.findByOrderId(orderId).orElseThrow(() -> new IllegalStateException(
                 "No reservation found for order"));
         harvestBatchRepository.returnStock(reservation.getBatch().getId(), reservation.getQuantity());
@@ -248,6 +249,28 @@ public class OrderService {
                 Map.of("status", previousStatus),
                 Map.of("status", OrderStatus.CANCELLED.name()));
         eventPublisher.publishEvent(new InventoryUpdateEvent(reservation.getBatch().getId()));
+        eventPublisher.publishEvent(new OrderStatusChangedEvent(userId, orderId, previousStatus, OrderStatus.CANCELLED.name()));
+         */
+        List<Reservation> reservations= reservationRepository.findAllByOrderId(orderId);
+        if(reservations.isEmpty()){
+            throw new IllegalStateException("No reservation found for order");
+        }
+        reservations.forEach(reservation -> {
+            harvestBatchRepository.returnStock(reservation.getBatch().getId(), reservation.getQuantity());
+            reservation.setStatus(ReservationStatus.CANCELLED);
+            reservationRepository.save(reservation);
+            auditService.log("HarvestBatch", reservation.getBatch().getId(), "STOCK_RETURNED", userId,
+                    Map.of("reason", "ORDER_CANCELLED_BY_CUSTOMER"),
+                    Map.of("quantityReturned", reservation.getQuantity()));
+            eventPublisher.publishEvent(new InventoryUpdateEvent(reservation.getBatch().getId()));
+        });
+        String previousStatus= order.getStatus().name();
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancellationReason("Cancelled by customer");
+        orderRepository.save(order);
+        auditService.log("Order", order.getId(), "ORDER_CANCELLED", userId,
+                Map.of("status", previousStatus),
+                Map.of("status", OrderStatus.CANCELLED.name()));
         eventPublisher.publishEvent(new OrderStatusChangedEvent(userId, orderId, previousStatus, OrderStatus.CANCELLED.name()));
         User user= userRepository.findById(order.getUser().getId()).orElseThrow(() -> new IllegalStateException(
                 "User not found"));
@@ -316,7 +339,7 @@ public class OrderService {
         return orderRepository.findAllByOrderByCreatedAtDesc().stream().map(order -> {
             List<OrderItemResponse> items= orderItemRepository.findAllByOrderIdWithDetails(order.getId()).stream().map(OrderItemResponse::from)
                     .collect(Collectors.toList());
-            LocalDateTime expiresAt= reservationRepository.findByOrderId(order.getId()).map(Reservation::getExpiresAt)
+            LocalDateTime expiresAt= reservationRepository.findAllByOrderId(order.getId()).stream().map(Reservation::getExpiresAt).findFirst()
                     .orElse(null);
             String disputeReason= orderDeliveryRepository.findByOrderId(order.getId()).map(d -> d.getDisputeReason())
                     .orElse(null);

@@ -58,8 +58,8 @@ public class OrderController {
                 orderService.expireImmediately(order.getId());
                 throw new IllegalStateException("Could not record payment. Please try again.");
             }
-            LocalDateTime expiresAt= reservationRepository.findByOrderId(order.getId()).map(com.zoick.farmmarket.domain.order.Reservation::getExpiresAt)
-                    .orElse(null);
+            LocalDateTime expiresAt= reservationRepository.findAllByOrderId(order.getId()).stream().map(com.zoick.farmmarket.domain.order.Reservation::getExpiresAt)
+                    .findFirst().orElse(null);
             return ResponseEntity.ok(CheckoutResponse.of(order.getId(), paymentIntent.clientSecret(), order.getStatus().name(), expiresAt));
         } catch (IllegalStateException e) {
             throw e;
