@@ -291,7 +291,7 @@ Flyway manages all schema changes. Migration files are in `src/main/resources/db
 
 ## Architectural Decision Records
 
-All major decisions are documented in [`Docs/adr/`](docs/adr/). Key decisions covered:
+All major decisions are documented in [`Docs/adr/`](Docs/adr/). Key decisions covered:
 
 - ADR-001: Two-phase checkout
 - ADR-002: Atomic stock deduction
